@@ -57,5 +57,9 @@ urlpatterns = [
     re_path(r'^(?P<username>\w+)/(?P<project_slug>[\w-]+)/(?P<rest_of_path>.*)$', views.dynamic_route_handler, name='dynamic_route'),
 ]
 
+# Serve static and media files in production
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
