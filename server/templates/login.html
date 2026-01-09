@@ -1,0 +1,198 @@
+{% extends "Base.html" %}
+{% load static %}
+{% block title %}Login - Dummy Server{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <h1 class="text-xl font-bold mb-2" id="auth-title">Sign In</h1>
+      <p class="text-secondary text-sm" id="auth-subtitle">Welcome back! Please sign in to continue.</p>
+    </div>
+
+    <!-- Google Sign In -->
+    <div class="divider">
+      <span>continue with email</span>
+    </div>
+
+    <!-- Login Form -->
+    <form id="login-form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="login">
+      
+      <div class="form-group">
+         <label for="login-email" class="form-label">Email or Username</label>
+         <input type="text" 
+           id="login-email" 
+           name="email" 
+           class="form-input" 
+           placeholder="name@example.com or username"
+           required>
+         <div id="login-email-feedback" class="form-text"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="login-password" class="form-label">Password</label>
+        <input type="password" 
+               id="login-password" 
+               name="password" 
+               class="form-input" 
+               placeholder="••••••••"
+               required>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full mt-5">
+        Sign In
+      </button>
+    </form>
+
+    <!-- Sign Up Form (Hidden by default) -->
+    <form id="signup-form" class="w-75" method="post" style="display: none;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="signup">
+      
+      <div class="flex gap-4 mb-3">
+        <div class="form-group">
+          <label for="signup-first-name" class="form-label">First Name</label>
+          <input type="text" 
+                 id="signup-first-name" 
+                 name="first_name" 
+                 class="form-input" 
+                 placeholder="John"
+                 required>
+        </div>
+        <div class="form-group">
+          <label for="signup-last-name" class="form-label">Last Name</label>
+          <input type="text" 
+                 id="signup-last-name" 
+                 name="last_name" 
+                 class="form-input" 
+                 placeholder="Doe"
+                 required>
+        </div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="signup-username" class="form-label">Username</label>
+        <input type="text" 
+               id="signup-username" 
+               name="username" 
+               class="form-input" 
+               placeholder="johndoe"
+               required
+               hx-post="{% url 'validate_username' %}"
+               hx-trigger="blur changed"
+               hx-target="#signup-username-feedback"
+               hx-include="[name='action']">
+        <div id="signup-username-feedback" class="form-text"></div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="signup-email" class="form-label">Email</label>
+        <input type="email" 
+               id="signup-email" 
+               name="email" 
+               class="form-input" 
+               placeholder="name@example.com"
+               required
+               hx-post="{% url 'validate_email' %}"
+               hx-trigger="blur changed"
+               hx-target="#signup-email-feedback"
+               hx-include="[name='action']">
+        <div id="signup-email-feedback" class="form-text"></div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="signup-password" class="form-label">Password</label>
+        <input type="password" 
+               id="signup-password" 
+               name="password" 
+               class="form-input" 
+               placeholder="••••••••"
+               minlength="8"
+               required>
+        <div class="form-text text-muted">Minimum 8 characters</div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="signup-confirm-password" class="form-label">Confirm Password</label>
+        <input type="password" 
+               id="signup-confirm-password" 
+               name="confirm_password" 
+               class="form-input" 
+               placeholder="••••••••"
+               required>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full mt-5">
+        Create Account
+      </button>
+    </form>
+
+    <!-- Toggle -->
+    <div class="text-center mt-4">
+      <span class="text-secondary text-sm" id="toggle-text">Don't have an account?</span>
+      <button type="button" onclick="toggleAuthMode()" class="btn-link text-sm" id="toggle-btn">
+        Sign Up
+      </button>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mt-4">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let isSignUp = false;
+
+  function toggleAuthMode() {
+    isSignUp = !isSignUp;
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const title = document.getElementById("auth-title");
+    const subtitle = document.getElementById("auth-subtitle");
+    const toggleText = document.getElementById("toggle-text");
+    const toggleBtn = document.getElementById("toggle-btn");
+
+    if (isSignUp) {
+      loginForm.style.display = "none";
+      signupForm.style.display = "block";
+      title.textContent = "Create Account";
+      subtitle.textContent = "Sign up to start creating mock APIs.";
+      toggleText.textContent = "Already have an account?";
+      toggleBtn.textContent = "Sign In";
+    } else {
+      loginForm.style.display = "block";
+      signupForm.style.display = "none";
+      title.textContent = "Sign In";
+      subtitle.textContent = "Welcome back! Please sign in to continue.";
+      toggleText.textContent = "Don't have an account?";
+      toggleBtn.textContent = "Sign Up";
+    }
+  }
+
+  function showAlert(type, message) {
+    const container = document.querySelector(".auth-card");
+    const existingAlert = container.querySelector(".alert");
+    if (existingAlert) existingAlert.remove();
+    
+    const alert = document.createElement("div");
+    alert.className = `alert alert-${type === "error" ? "danger" : type} mt-4`;
+    alert.textContent = message;
+    container.appendChild(alert);
+    
+    setTimeout(() => alert.remove(), 5000);
+  }
+</script>
+{% endblock %}

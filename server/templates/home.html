@@ -1,0 +1,285 @@
+{% extends "Base.html" %}
+{% block title %}Dashboard - Dummy Server{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<!-- Hero Section -->
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-neutral-900 dark:text-white mb-3">Welcome back, {{ user.first_name|default:user.username }}!</h1>
+  <p class="text-neutral-600 dark:text-neutral-400 max-w-3xl">
+    Spin up realistic endpoints in seconds, prototype faster with saved responses, and share stable URLs with your team.
+  </p>
+  <div class="flex flex-wrap items-center gap-3 mt-3">
+    <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 text-xs font-semibold">Open Source</span>
+    <a href="https://github.com/sudarshankakde" target="_blank" rel="noopener" class="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+      <i class="bi bi-github"></i> Built by @sudarshankakde
+    </a>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+  <div class="card">
+    <div class="card-body flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl flex items-center justify-center">
+          <i class="bi bi-folder-plus text-emerald-600 dark:text-emerald-400 text-lg"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-neutral-900 dark:text-white">New Project</h3>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">Create a new API project</p>
+        </div>
+      </div>
+      <a href="{% url 'create_project' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus"></i> Create Project
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center">
+          <i class="bi bi-signpost-split text-blue-600 dark:text-blue-400 text-lg"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-neutral-900 dark:text-white">New Route</h3>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">Add a new API endpoint</p>
+        </div>
+      </div>
+      <a href="{% url 'create_route' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus"></i> Create Route
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-amber-100 dark:bg-amber-500/20 rounded-xl flex items-center justify-center">
+          <i class="bi bi-book text-amber-600 dark:text-amber-400 text-lg"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-neutral-900 dark:text-white">Documentation</h3>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">Learn how to use the API</p>
+        </div>
+      </div>
+      <a href="#how-it-works" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-right"></i> Learn More
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Projects Section -->
+<div class="card mb-8">
+  <div class="card-header flex justify-between items-center">
+    <h5 class="text-sm font-semibold text-neutral-900 dark:text-white"><i class="bi bi-folder mr-2"></i> Your Projects</h5>
+    <a href="{% url 'create_project' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus"></i> New
+    </a>
+  </div>
+  <div class="card-body p-0">
+    {% if user.projects.all %}
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Slug</th>
+            <th>Routes</th>
+            <th>Base URL</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in user.projects.all %}
+          <tr>
+            <td>
+              <a href="{% url 'project_detail' project.id %}" class="font-medium text-neutral-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">{{ project.name }}</a>
+              {% if project.description %}
+              <div class="text-sm text-neutral-500 dark:text-neutral-400">{{ project.description|truncatewords:8 }}</div>
+              {% endif %}
+            </td>
+            <td><code class="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded">{{ project.slug }}</code></td>
+            <td><span class="badge badge-secondary">{{ project.routes.count }}</span></td>
+            <td><code class="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded">/{{ user.username }}/{{ project.slug }}/</code></td>
+            <td>
+              <a href="{% url 'project_detail' project.id %}" class="btn btn-secondary btn-sm mr-2">
+                <i class="bi bi-eye"></i> View
+              </a>
+              <a href="{% url 'create_route_for_project' project.id %}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-plus"></i> Route
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-folder"></i>
+      <h3 class="text-lg font-semibold text-neutral-900 dark:text-white mb-2">No projects yet</h3>
+      <p class="text-neutral-500 dark:text-neutral-400 mb-5">Create your first project to start building mock APIs.</p>
+      <a href="{% url 'create_project' %}" class="flex flex-row items-center justify-center border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition py-7">
+        <span class="bi bi-plus  text-2xl"></span>
+        Create Project
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- How It Works -->
+<div class="card" id="how-it-works">
+  <div class="card-header">
+    <h5 class="text-sm font-semibold text-neutral-900 dark:text-white"><i class="bi bi-lightbulb mr-2"></i> How It Works</h5>
+  </div>
+  <div class="card-body">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="text-center p-4">
+        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="font-bold text-neutral-900 dark:text-white">1</span>
+        </div>
+        <h4 class="font-semibold text-neutral-900 dark:text-white mb-2">Create a Project</h4>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Give your API project a name and slug to organize your routes.</p>
+      </div>
+      <div class="text-center p-4">
+        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="font-bold text-neutral-900 dark:text-white">2</span>
+        </div>
+        <h4 class="font-semibold text-neutral-900 dark:text-white mb-2">Add Routes</h4>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Define endpoints with custom paths, methods, and JSON responses.</p>
+      </div>
+      <div class="text-center p-4">
+        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="font-bold text-neutral-900 dark:text-white">3</span>
+        </div>
+        <h4 class="font-semibold text-neutral-900 dark:text-white mb-2">Use Your API</h4>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Access your mock API at <code class="text-xs bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">/username/project/route</code></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-purple-100 dark:bg-purple-500/20 rounded-xl flex items-center justify-center">
+          <i class="bi bi-cloud-arrow-up text-purple-600 dark:text-purple-400 text-lg"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-neutral-900 dark:text-white">Import JSON</h3>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">Upload payloads and serve them instantly.</p>
+        </div>
+      </div>
+      <a href="{% url 'create_route' %}#file-tab" class="btn btn-secondary btn-sm">
+        <i class="bi bi-upload"></i> Upload response file
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Extra CTA -->
+<div class="card mt-8">
+  <div class="card-body flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h3 class="text-lg font-semibold text-neutral-900 dark:text-white mb-1">Ship mock APIs today</h3>
+      <p class="text-neutral-600 dark:text-neutral-400">Reuse routes across projects, keep real responses handy, and unblock frontend work.</p>
+    </div>
+    <div class="flex gap-3 flex-wrap">
+      <a href="{% url 'create_project' %}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New project</a>
+      <a href="{% url 'create_route' %}" class="btn btn-secondary"><i class="bi bi-diagram-3"></i> Create route</a>
+    </div>
+  </div>
+</div>
+
+<!-- Open Source & Credits -->
+<div class="card mt-6 border-dashed border-2 border-neutral-200 dark:border-neutral-700">
+  <div class="card-body flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 text-xs font-semibold">Open Source</span>
+        <span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 text-xs font-semibold">MIT</span>
+      </div>
+      <h3 class="text-md font-semibold text-neutral-900 dark:text-white">Dummy Server is community-built.</h3>
+      <p class="text-sm text-neutral-600 dark:text-neutral-400 max-w-2xl">Explore the code, file issues, and star the repo to support the project. Contributions are welcome.</p>
+    </div>
+    <div class="flex gap-3 flex-wrap">
+      <a href="https://github.com/sudarshankakde" target="_blank" rel="noopener" class="btn btn-secondary">
+        <i class="bi bi-github"></i> View on GitHub
+      </a>
+      <a href="https://github.com/sudarshankakde" target="_blank" rel="noopener" class="btn btn-primary">
+        <i class="bi bi-star"></i> Star the project
+      </a>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- Landing Page for Non-Authenticated Users -->
+<div class="auth-container flex-col text-center">
+  <div class="mb-12">
+    <h1 class="text-4xl font-bold text-neutral-900 dark:text-white mb-4">Mock APIs Made Simple</h1>
+    <p class="text-neutral-600 dark:text-neutral-400 text-lg mb-8 max-w-lg mx-auto">
+      Create dynamic mock APIs instantly. Upload or paste JSON, and serve them via custom routes.
+    </p>
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
+      Get Started <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl w-full">
+    <div class="card">
+      <div class="card-body text-center py-8">
+        <i class="bi bi-lightning-charge text-3xl text-amber-500 mb-4"></i>
+        <h3 class="font-semibold text-neutral-900 dark:text-white mb-2">Instant Setup</h3>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Create mock APIs in seconds with no configuration required.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body text-center py-8">
+        <i class="bi bi-code-slash text-3xl text-blue-500 mb-4"></i>
+        <h3 class="font-semibold text-neutral-900 dark:text-white mb-2">Custom Routes</h3>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Define any HTTP method, path, status code, and response.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body text-center py-8">
+        <i class="bi bi-share text-3xl text-emerald-500 mb-4"></i>
+        <h3 class="font-semibold text-neutral-900 dark:text-white mb-2">Easy Sharing</h3>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Share your mock APIs with simple, clean URLs.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body text-center py-8">
+        <i class="bi bi-shield-check text-3xl text-indigo-500 mb-4"></i>
+        <h3 class="font-semibold text-neutral-900 dark:text-white mb-2">Reliable & Fast</h3>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">Stable responses, status control, and quick iteration for demos.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-8 border-dashed border-2 border-neutral-200 dark:border-neutral-700">
+    <div class="card-body flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-left md:text-left">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 text-xs font-semibold">Open Source</span>
+          <span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 text-xs font-semibold">MIT</span>
+        </div>
+        <h3 class="text-md font-semibold text-neutral-900 dark:text-white">Built for makers, shared with everyone.</h3>
+        <p class="text-sm text-neutral-600 dark:text-neutral-400 max-w-2xl">Fork it, ship it, or contribute improvements. Check out the maintainer and follow along for updates.</p>
+      </div>
+      <div class="flex gap-3 flex-wrap justify-center md:justify-end">
+        <a href="https://github.com/sudarshankakde" target="_blank" rel="noopener" class="btn btn-secondary">
+          <i class="bi bi-github"></i> View on GitHub
+        </a>
+        <a href="https://github.com/sudarshankakde" target="_blank" rel="noopener" class="btn btn-primary">
+          <i class="bi bi-person-heart"></i> Follow @sudarshankakde
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

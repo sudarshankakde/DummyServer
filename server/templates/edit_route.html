@@ -1,0 +1,683 @@
+{% extends "Base.html" %}
+{% block title %}Edit Route - Dummy Server{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <a href="{% url 'route_detail' route.id %}" class="btn-link text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+    <i class="bi bi-arrow-left mr-1"></i> Back to Route
+  </a>
+</div>
+
+<div class="max-w-3xl mx-auto">
+  <div class="card">
+    <div class="card-header">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center">
+          <i class="bi bi-pencil-square text-blue-600 dark:text-blue-400 text-lg"></i>
+        </div>
+        <div>
+          <h5 class="text-sm font-semibold text-neutral-900 dark:text-white">Edit Route</h5>
+          <p class="text-neutral-500 dark:text-neutral-400 text-xs">Update your API endpoint configuration</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Project Selection (Read-only) -->
+        <div class="mb-5">
+          <label for="project" class="form-label">Project</label>
+          <select id="project" name="project" class="form-input" disabled>
+            <option value="{{ project.id }}" selected>{{ project.name }} ({{ project.slug }})</option>
+          </select>
+          <div class="form-text">Project cannot be changed. Create a new route in a different project if needed.</div>
+        </div>
+
+        <!-- Route Type -->
+        <div class="mb-5">
+          <label for="route_type" class="form-label">Route Type</label>
+          <select id="route_type" name="route_type" class="form-input" onchange="toggleRouteTypeFields()">
+            <option value="STANDARD" {% if route.route_type == 'STANDARD' %}selected{% endif %}>Standard Response</option>
+            <option value="EMAIL_OTP" {% if route.route_type == 'EMAIL_OTP' %}selected{% endif %}>Email OTP Verification</option>
+          </select>
+          <div class="form-text">Email OTP routes automatically handle send/verify actions</div>
+        </div>
+
+        <!-- EMAIL_OTP Documentation -->
+        <div id="email-otp-info" class="mb-5" style="display: none;">
+          <div class="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <i class="bi bi-info-circle-fill text-blue-600 dark:text-blue-400 text-lg mt-0.5"></i>
+              <div class="flex-1">
+                <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">Email OTP Request Format</h4>
+                <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">User must provide their email address in the request body:</p>
+                <div class="space-y-2">
+                  <div>
+                    <div class="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">To send OTP:</div>
+                    <code class="block bg-white dark:bg-neutral-900 px-3 py-2 rounded-lg text-xs text-neutral-800 dark:text-neutral-200">{"action": "send", "email": "user@example.com"}</code>
+                  </div>
+                  <div>
+                    <div class="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">To verify OTP:</div>
+                    <code class="block bg-white dark:bg-neutral-900 px-3 py-2 rounded-lg text-xs text-neutral-800 dark:text-neutral-200">{"action": "verify", "email": "user@example.com", "otp": "123456"}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+          <!-- HTTP Method -->
+          <div>
+            <label for="method" class="form-label">Method</label>
+            <select id="method" name="method" class="form-input" required>
+              <option value="GET" {% if route.method == 'GET' %}selected{% endif %}>GET</option>
+              <option value="POST" {% if route.method == 'POST' %}selected{% endif %}>POST</option>
+              <option value="PUT" {% if route.method == 'PUT' %}selected{% endif %}>PUT</option>
+              <option value="PATCH" {% if route.method == 'PATCH' %}selected{% endif %}>PATCH</option>
+              <option value="DELETE" {% if route.method == 'DELETE' %}selected{% endif %}>DELETE</option>
+            </select>
+          </div>
+
+          <!-- Path -->
+          <div class="md:col-span-2">
+            <label for="path" class="form-label">Path</label>
+            <input type="text" 
+                   id="path" 
+                   name="path" 
+                   class="form-input" 
+                   value="{{ route.path|slice:'1:' }}"
+                   required
+                  pattern="^(?!/)(?!.*//)(?!.*\/$)[a-z0-9-]+(\/[a-z0-9-]+)*$"
+                  title="Use lowercase letters, numbers, hyphens. No leading or trailing slash."
+                  oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9\/-]/g, '').replace(/\s+/g, '-').replace(/^\/+/, '').replace(/\/\/+/g, '/'); this.setCustomValidity(''); document.getElementById('preview-path').textContent = this.value || 'path'; checkDuplicateRoute();"
+                  oninvalid="this.setCustomValidity('Invalid path. Example: users/123')"
+                  hx-get="{% url 'check_route_exists' %}"
+                  hx-trigger="blur changed delay:100ms"
+                  hx-target="#route-exists-feedback"
+                  hx-indicator="#route-exists-loading"
+                  hx-include="[name='project'], [name='method']"/>
+            <div class="form-text">Without leading slash</div>
+          </div>
+
+          <!-- Status Code -->
+          <div>
+            <label for="status_code" class="form-label">Status</label>
+            <select id="status_code" name="status_code" class="form-input">
+              <option value="200" {% if route.status_code == 200 %}selected{% endif %}>200 OK</option>
+              <option value="201" {% if route.status_code == 201 %}selected{% endif %}>201 Created</option>
+              <option value="204" {% if route.status_code == 204 %}selected{% endif %}>204 No Content</option>
+              <option value="400" {% if route.status_code == 400 %}selected{% endif %}>400 Bad Request</option>
+              <option value="401" {% if route.status_code == 401 %}selected{% endif %}>401 Unauthorized</option>
+              <option value="403" {% if route.status_code == 403 %}selected{% endif %}>403 Forbidden</option>
+              <option value="404" {% if route.status_code == 404 %}selected{% endif %}>404 Not Found</option>
+              <option value="500" {% if route.status_code == 500 %}selected{% endif %}>500 Server Error</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Route Exists Feedback -->
+        <div id="route-exists-loading" class="htmx-indicator mb-4">
+          <div class="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl">
+            <div class="animate-spin text-blue-600 dark:text-blue-400">
+              <i class="bi bi-arrow-repeat text-lg"></i>
+            </div>
+            <span class="text-sm text-blue-600 dark:text-blue-400 font-medium">Checking route...</span>
+          </div>
+        </div>
+        <div id="route-exists-feedback" class="mb-4"></div>
+
+        <!-- Content Type -->
+        <div class="mb-5">
+          <label for="content_type" class="form-label">Content Type</label>
+          <select id="content_type" name="content_type" class="form-input">
+            <option value="application/json" {% if route.content_type == 'application/json' %}selected{% endif %}>application/json</option>
+            <option value="text/plain" {% if route.content_type == 'text/plain' %}selected{% endif %}>text/plain</option>
+            <option value="text/html" {% if route.content_type == 'text/html' %}selected{% endif %}>text/html</option>
+            <option value="application/xml" {% if route.content_type == 'application/xml' %}selected{% endif %}>application/xml</option>
+          </select>
+        </div>
+
+        <!-- Request Body Validation -->
+        <div class="mb-5" id="request-body-section">
+          <label class="form-label">Expected Request Body (Optional)</label>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-3">Define the exact JSON structure required in the request body for POST/PUT/PATCH methods</p>
+          <div class="relative group">
+            <div class="flex border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 dark:focus-within:ring-blue-400 dark:focus-within:border-blue-400 hover:border-neutral-300 dark:hover:border-neutral-600 max-h-[30vh] overflow-auto scroll">
+              <pre id="request-line-numbers" class="bg-neutral-50 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 font-mono text-sm py-3 px-3 select-none border-r border-neutral-200 dark:border-neutral-700 text-right leading-6 overflow-hidden m-0" style="min-width: 3rem;">1</pre>
+              <textarea id="request_body" 
+                        name="request_body" 
+                        class="flex-1 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white font-mono text-sm py-3 px-4 border-0 focus:outline-none resize-none leading-6 transition-colors"
+                        rows="6"
+                        placeholder='{
+  "email": "user@example.com",
+  "password": "string"
+}'>{% if route.request_body %}{{ route.request_body|safe }}{% endif %}</textarea>
+            </div>
+          </div>
+          <div class="form-text mt-2">If specified, incoming requests must match this structure exactly</div>
+        </div>
+
+        <!-- Response Type Tabs -->
+        <div class="mb-5" id="response-section">
+          <label class="form-label">Response Body</label>
+          <div class="flex gap-2 mb-4">
+            <button type="button" class="btn {% if route.response_json %}btn-primary{% else %}btn-secondary{% endif %} btn-sm tab-btn {% if route.response_json %}active{% endif %}" data-tab="json">
+              <i class="bi bi-code"></i> JSON
+            </button>
+            <button type="button" class="btn {% if route.response_file %}btn-primary{% else %}btn-secondary{% endif %} btn-sm tab-btn {% if route.response_file %}active{% endif %}" data-tab="file">
+              <i class="bi bi-file-earmark"></i> File Upload
+            </button>
+          </div>
+
+          <!-- JSON Input -->
+          <div id="json-tab" class="tab-content {% if route.response_file %}hidden{% endif %}">
+            <div class="flex gap-2 mb-3 justify-between">
+              <span class="my-auto text-capitalize form-label">Enter Valid JSON</span>
+              <button type="button" onclick="openAiModal()" class="btn btn-secondary btn-sm float-right">
+                <i class="bi bi-stars"></i> Generate with AI
+              </button>
+            </div>
+            <div class="relative group ">
+              <div class="flex border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 dark:focus-within:ring-blue-400 dark:focus-within:border-blue-400 hover:border-neutral-300 dark:hover:border-neutral-600  max-h-[50vh] overflow-auto scroll">
+                <!-- Line Numbers -->
+                <pre id="line-numbers" class="bg-neutral-50 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 font-mono text-sm py-3 px-3 select-none border-r border-neutral-200 dark:border-neutral-700 text-right leading-6 overflow-hidden m-0" style="min-width: 3rem;">1</pre>
+                <!-- Textarea -->
+                <textarea id="response_json" 
+                          name="response_json" 
+                          class="flex-1 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white font-mono text-sm py-3 px-4 border-0 focus:outline-none resize-none leading-6 transition-colors"
+                          rows="10">{% if route.response_json %}{{ route.response_json }}{% endif %}</textarea>
+              </div>
+              <!-- Copy Button -->
+              <button type="button" 
+                      onclick="navigator.clipboard.writeText(document.getElementById('response_json').value); this.innerHTML='<i class=\'bi bi-check\'></i> Copied'; setTimeout(() => this.innerHTML='<i class=\'bi bi-clipboard\'></i>', 2000);"
+                      class="absolute top-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700">
+                <i class="bi bi-clipboard"></i>
+              </button>
+            </div>
+            <!-- Loading Indicator -->
+            <div id="json-loading" class="htmx-indicator mt-3">
+              <div class="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl">
+                <div class="animate-spin text-blue-600 dark:text-blue-400">
+                  <i class="bi bi-arrow-repeat text-lg"></i>
+                </div>
+                <span class="text-sm text-blue-600 dark:text-blue-400 font-medium">Validating JSON...</span>
+              </div>
+            </div>
+            <!-- Feedback -->
+            <div id="json-feedback" class="mt-3" style="display: none;"></div>
+          </div>
+ 
+          <!-- File Upload -->
+          <div id="file-tab" class="tab-content {% if not route.response_file %}hidden{% endif %}">
+            <div class="border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-xl p-10 text-center hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors">
+              <i class="bi bi-cloud-upload text-3xl text-neutral-400 dark:text-neutral-500 mb-3 block"></i>
+              <p class="text-neutral-500 dark:text-neutral-400 mb-4">Drag and drop a JSON file or click to browse</p>
+              <input type="file" 
+                     id="response_file" 
+                     name="response_file" 
+                     accept=".json"
+                     class="hidden">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('response_file').click()">
+                <i class="bi bi-folder2-open"></i> Browse Files
+              </button>
+              <div id="file-name" class="text-sm text-neutral-500 mt-3">{% if route.response_file %}Current: {{ route.response_file.name|slice:"4:" }}{% endif %}</div>
+            </div>
+            <!-- File Validation Feedback -->
+            <div id="file-feedback" class="mt-3" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Preview URL -->
+        <div class="alert alert-info mb-6">
+          <div class="flex items-center gap-2">
+            <i class="bi bi-link-45deg"></i>
+            <strong>Endpoint URL:</strong>
+          </div>
+          <code class="block  text-sm break-all my-auto " id="preview-url">
+            /{{ project.owner.username }}/<span id="preview-project">{{ project.slug }}</span>/<span id="preview-path">{{ route.path|slice:'1:' }}</span>
+          </code>
+        </div>
+
+        <div class="flex gap-3">
+          <a href="{% url 'route_detail' route.id %}" class="btn btn-secondary flex-1">Cancel</a>
+          <button type="submit" id="submit-btn" class="btn btn-primary flex-[2]">
+            <i class="bi bi-pencil"></i> Update Route
+          </button>
+        </div>
+      </form>
+
+      {% if error %}
+      <div class="mt-6 alert alert-error">
+        {{ error }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- AI JSON Generator Modal -->
+<div id="ai-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all">
+    <div class="border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+            <i class="bi bi-stars text-white text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">AI JSON Generator</h3>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">Powered by Gemini</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAiModal()" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">
+          <i class="bi bi-x-lg text-xl"></i>
+        </button>
+      </div>
+    </div>
+    <div class="p-6">
+      <div class="mb-4">
+        <label class="form-label">Describe the JSON response you need</label>
+        <textarea id="ai-prompt" 
+                  class="form-input" 
+                  rows="4" 
+                  placeholder="Example: Create a user profile JSON with name, email, age, address with city and country, and a list of 3 hobbies"></textarea>
+      </div>
+      <div id="ai-loading" class="hidden mb-4">
+        <div class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
+          <div class="animate-spin">
+            <i class="bi bi-arrow-repeat text-blue-600 dark:text-blue-400"></i>
+          </div>
+          <span class="text-sm text-blue-600 dark:text-blue-400">Generating JSON with AI...</span>
+        </div>
+      </div>
+      <div id="ai-error" class="hidden mb-4 alert alert-error"></div>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeAiModal()" class="btn btn-secondary flex-1">Cancel</button>
+        <button type="button" onclick="generateJson()" class="btn btn-primary flex-[2]">
+          <i class="bi bi-stars"></i> Generate JSON
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Form validation
+  const projectSelect = document.getElementById('project');
+  const pathInput = document.getElementById('path');
+  const methodSelect = document.getElementById('method');
+  const jsonTextarea = document.getElementById('response_json');
+  const fileInput = document.getElementById('response_file');
+  const submitBtn = document.getElementById('submit-btn');
+  
+  function checkFormValidity() {
+    const pathValid = pathInput.value.trim() !== '' && pathInput.checkValidity();
+    const methodSelected = methodSelect.value !== '';
+    
+    // Check if we're on JSON tab or File tab
+    const jsonTab = document.getElementById('json-tab');
+    const isJsonTabVisible = !jsonTab.classList.contains('hidden');
+    
+    let responseValid = false;
+    if (isJsonTabVisible) {
+      // JSON tab: check if JSON is valid
+      const jsonValue = jsonTextarea.value.trim();
+      if (jsonValue) {
+        try {
+          JSON.parse(jsonValue);
+          responseValid = true;
+        } catch {
+          responseValid = false;
+        }
+      }
+    } else {
+      // File tab: check if file is selected or already exists
+      responseValid = fileInput.files.length > 0 || {{ route.response_file|yesno:"true,false" }};
+    }
+    
+    // Enable submit only if all conditions are met
+    const isValid = pathValid && methodSelected && responseValid;
+    submitBtn.disabled = !isValid;
+  }
+  
+  // Listen for changes on key form fields
+  pathInput.addEventListener('input', checkFormValidity);
+  pathInput.addEventListener('change', checkFormValidity);
+  methodSelect.addEventListener('change', checkFormValidity);
+  jsonTextarea.addEventListener('input', checkFormValidity);
+  jsonTextarea.addEventListener('change', checkFormValidity);
+  fileInput.addEventListener('change', checkFormValidity);
+  
+  // Tab switching
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tab = this.dataset.tab;
+      
+      // Update button states
+      tabBtns.forEach(b => {
+        b.classList.remove('btn-primary', 'active');
+        b.classList.add('btn-secondary');
+      });
+      this.classList.remove('btn-secondary');
+      this.classList.add('btn-primary', 'active');
+      
+      // Show/hide tabs
+      document.getElementById('json-tab').classList.toggle('hidden', tab !== 'json');
+      document.getElementById('file-tab').classList.toggle('hidden', tab !== 'file');
+      
+      // Recheck form validity when switching tabs
+      setTimeout(checkFormValidity, 100);
+    });
+  });
+
+  // File input handling
+  const fileNameDisplay = document.getElementById('file-name');
+  const fileFeedback = document.getElementById('file-feedback');
+  
+  function validateJsonFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!file.name.endsWith('.json')) {
+        reject('File must be a JSON file (.json)');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const content = e.target.result;
+          JSON.parse(content);
+          resolve(content);
+        } catch (error) {
+          reject('Invalid JSON file: ' + error.message);
+        }
+      };
+      reader.onerror = function() {
+        reject('Error reading file');
+      };
+      reader.readAsText(file);
+    });
+  }
+  
+  function showFileError(message) {
+    fileFeedback.innerHTML = `<div class="flex items-start gap-3 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400"><i class="bi bi-exclamation-triangle-fill text-lg mt-0.5"></i><div class="text-sm"><div class="font-medium mb-1">File Validation Failed</div><div class="text-xs opacity-90">${message}</div></div></div>`;
+    fileFeedback.style.display = 'block';
+    fileNameDisplay.textContent = '';
+    fileNameDisplay.classList.remove('text-emerald-600', 'dark:text-emerald-400');
+  }
+  
+  function showFileSuccess(fileName) {
+    fileFeedback.innerHTML = `<div class="flex items-center gap-3 px-4 py-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400"><i class="bi bi-check-circle-fill text-lg"></i><span class="text-sm font-medium">Valid JSON file - Ready to upload</span></div>`;
+    fileFeedback.style.display = 'block';
+    fileNameDisplay.textContent = 'Selected: ' + fileName;
+    fileNameDisplay.classList.add('text-emerald-600', 'dark:text-emerald-400');
+    checkFormValidity();
+  }
+  
+  fileInput.addEventListener('change', async function() {
+    if (this.files.length > 0) {
+      const file = this.files[0];
+      try {
+        await validateJsonFile(file);
+        showFileSuccess(file.name);
+      } catch (error) {
+        showFileError(error);
+        this.value = '';
+        checkFormValidity();
+      }
+    } else {
+      fileFeedback.style.display = 'none';
+      fileNameDisplay.textContent = '';
+      checkFormValidity();
+    }
+  });
+
+  // URL Preview
+  const previewProject = document.getElementById('preview-project');
+  const previewPath = document.getElementById('preview-path');
+
+  function updatePreview() {
+    previewPath.innerText = pathInput.value || 'path';
+  }
+
+  pathInput.addEventListener('input', updatePreview);
+  updatePreview();
+
+  // Drag and drop
+  const dropZone = document.querySelector('#file-tab > div');
+  
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('border-blue-400', 'dark:border-blue-500', 'bg-blue-50', 'dark:bg-blue-500/10');
+  });
+
+  dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-400', 'dark:border-blue-500', 'bg-blue-50', 'dark:bg-blue-500/10');
+  });
+
+  dropZone.addEventListener('drop', async function(e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-400', 'dark:border-blue-500', 'bg-blue-50', 'dark:bg-blue-500/10');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      try {
+        await validateJsonFile(file);
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+        showFileSuccess(file.name);
+      } catch (error) {
+        showFileError(error);
+      }
+    }
+  });
+
+  // JSON Textarea Line Numbers
+  const lineNumbers = document.getElementById('line-numbers');
+  const jsonFeedback = document.getElementById('json-feedback');
+  const jsonLoading = document.getElementById('json-loading');
+  
+  function updateLineNumbers() {
+    const lines = jsonTextarea.value.split('\n').length;
+    const numbers = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+    lineNumbers.textContent = numbers;
+  }
+  
+  function validateJson() {
+    const value = jsonTextarea.value.trim();
+    
+    if (!value) {
+      jsonFeedback.innerHTML = '';
+      jsonFeedback.style.display = 'none';
+      return;
+    }
+    
+    jsonLoading.style.display = 'block';
+    
+    try {
+      JSON.parse(value);
+      setTimeout(() => {
+        jsonLoading.style.display = 'none';
+        jsonFeedback.innerHTML = '<div class="flex items-center gap-3 px-4 py-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400"><i class="bi bi-check-circle-fill text-lg"></i><span class="text-sm font-medium">Valid JSON</span></div>';
+        jsonFeedback.style.display = 'block';
+        checkFormValidity();
+      }, 300);
+    } catch (error) {
+      setTimeout(() => {
+        jsonLoading.style.display = 'none';
+        jsonFeedback.innerHTML = `<div class="flex items-start gap-3 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400"><i class="bi bi-exclamation-triangle-fill text-lg mt-0.5"></i><div class="text-sm"><div class="font-medium mb-1">Invalid JSON</div><div class="text-xs opacity-90">${error.message}</div></div></div>`;
+        jsonFeedback.style.display = 'block';
+      }, 300);
+    }
+  }
+  
+  jsonTextarea.addEventListener('input', updateLineNumbers);
+  jsonTextarea.addEventListener('blur', validateJson);
+  jsonTextarea.addEventListener('change', validateJson);
+  jsonTextarea.addEventListener('scroll', function() {
+    lineNumbers.scrollTop = jsonTextarea.scrollTop;
+  });
+
+  // Request body line numbers
+  const requestBodyTextarea = document.getElementById('request_body');
+  const requestLineNumbers = document.getElementById('request-line-numbers');
+  
+  function updateRequestLineNumbers() {
+    if (!requestBodyTextarea) return;
+    const lines = requestBodyTextarea.value.split('\n').length;
+    requestLineNumbers.textContent = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+  }
+  
+  if (requestBodyTextarea) {
+    requestBodyTextarea.addEventListener('input', updateRequestLineNumbers);
+    requestBodyTextarea.addEventListener('scroll', function() {
+      requestLineNumbers.scrollTop = requestBodyTextarea.scrollTop;
+    });
+    updateRequestLineNumbers();
+  }
+
+  // Route type toggle
+  function toggleRouteTypeFields() {
+    const routeType = document.getElementById('route_type').value;
+    const responseSection = document.getElementById('response-section');
+    const requestBodySection = document.getElementById('request-body-section');
+    const methodSelect = document.getElementById('method');
+    const emailOtpInfo = document.getElementById('email-otp-info');
+    const requestBodyTextarea = document.getElementById('request_body');
+    const requestBodyLabel = requestBodySection.querySelector('.form-label');
+    const requestBodyHelp = requestBodySection.querySelector('p');
+    
+    if (routeType === 'EMAIL_OTP') {
+      responseSection.style.display = 'none';
+      requestBodySection.style.display = 'block';
+      emailOtpInfo.style.display = 'block';
+      
+      // Update label and help text for EMAIL_OTP
+      requestBodyLabel.textContent = 'Email OTP Request Format';
+      requestBodyHelp.textContent = 'This is the expected request body format for send and verify actions';
+      
+      // Pre-fill with EMAIL_OTP example if empty
+      if (!requestBodyTextarea.value.trim()) {
+        requestBodyTextarea.value = `// To send OTP:
+{"action": "send", "email": "user@example.com"}
+
+// To verify OTP:
+{"action": "verify", "email": "user@example.com", "otp": "123456"}`;
+        updateRequestLineNumbers();
+      }
+      
+      // Force POST method for EMAIL_OTP
+      methodSelect.value = 'POST';
+      methodSelect.disabled = true;
+    } else {
+      responseSection.style.display = 'block';
+      emailOtpInfo.style.display = 'none';
+      
+      // Restore original labels
+      requestBodyLabel.textContent = 'Expected Request Body (Optional)';
+      requestBodyHelp.textContent = 'Define the exact JSON structure required in the request body for POST/PUT/PATCH methods';
+      
+      methodSelect.disabled = false;
+      updateRequestBodyVisibility();
+    }
+  }
+  
+  // Show request body only for POST/PUT/PATCH
+  function updateRequestBodyVisibility() {
+    const routeType = document.getElementById('route_type').value;
+    const method = document.getElementById('method').value;
+    const requestBodySection = document.getElementById('request-body-section');
+    
+    // Always show for EMAIL_OTP
+    if (routeType === 'EMAIL_OTP') {
+      requestBodySection.style.display = 'block';
+    } else if (['GET', 'DELETE'].includes(method)) {
+      requestBodySection.style.display = 'none';
+    } else {
+      requestBodySection.style.display = 'block';
+    }
+  }
+  
+  // Add event listener to method select
+  document.getElementById('method').addEventListener('change', updateRequestBodyVisibility);
+  
+  // Initialize on load
+  toggleRouteTypeFields();
+
+  // AI Modal Functions
+  function openAiModal() {
+    document.getElementById('ai-modal').classList.remove('hidden');
+    document.getElementById('ai-prompt').value = '';
+    document.getElementById('ai-error').classList.add('hidden');
+  }
+
+  function closeAiModal() {
+    document.getElementById('ai-modal').classList.add('hidden');
+  }
+
+  async function generateJson() {
+    const prompt = document.getElementById('ai-prompt').value.trim();
+    if (!prompt) {
+      showError('Please enter a description for the JSON you want to generate.');
+      return;
+    }
+
+    const loading = document.getElementById('ai-loading');
+    const errorDiv = document.getElementById('ai-error');
+    
+    loading.classList.remove('hidden');
+    errorDiv.classList.add('hidden');
+
+    try {
+      const response = await fetch('{% url "generate_json_ai" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ prompt: prompt })
+      });
+
+      const data = await response.json();
+      loading.classList.add('hidden');
+
+      if (response.ok) {
+        document.getElementById('response_json').value = data.json;
+        updateLineNumbers();
+        closeAiModal();
+        checkFormValidity();
+      } else {
+        showError(data.error || 'Failed to generate JSON. Please try again.');
+      }
+    } catch (error) {
+      loading.classList.add('hidden');
+      showError('Network error. Please check your connection and try again.');
+    }
+  }
+
+  function showError(message) {
+    const errorDiv = document.getElementById('ai-error');
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('hidden');
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAiModal();
+  });
+
+  document.getElementById('ai-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAiModal();
+  });
+
+  // Initialize
+  updateLineNumbers();
+  checkFormValidity();
+</script>
+{% endblock %}

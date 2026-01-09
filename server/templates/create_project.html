@@ -1,0 +1,67 @@
+{% extends "Base.html" %}
+{% block title %}Create Project - Dummy Server{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <a href="{% url 'home' %}"
+    class="btn-link text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+    <i class="bi bi-arrow-left mr-1"></i> Back to Dashboard
+  </a>
+</div>
+
+<div class="auth-container py-8">
+  <div class="auth-card max-w-lg">
+    <div class="text-center mb-8">
+      <div
+        class="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+        <i class="bi bi-folder-plus text-emerald-600 dark:text-emerald-400 text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Create New Project</h1>
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Projects help you organize your mock API routes.</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="mb-5">
+        <label for="name" class="form-label">Project Name</label>
+        <input type="text" id="name" name="name" class="form-input" placeholder="My Awesome API" required />
+      </div>
+      <div class="mb-5">
+        <label for="slug" class="form-label">Project Slug</label>
+        <input type="text" id="slug" name="slug" class="form-input" placeholder="my-awesome-api" required
+          pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens allowed"
+          oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/\s+/g, '-'); document.getElementById('slug-preview').textContent = this.value || 'your-slug';">
+        <div class="form-text">
+          URL: <code
+            class="text-xs bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">/{{ user.username }}/<span id="slug-preview">your-slug</span>/</code>
+        </div>
+      </div>
+      <div class="mb-6">
+        <label for="description" class="form-label">Description <span class="text-neutral-400">(optional)</span></label>
+        <textarea id="description" name="description" class="form-input" rows="3"
+          placeholder="A brief description of what this API does..."></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <a href="{% url 'home' %}" class="btn btn-secondary flex-1">Cancel</a>
+        <button type="submit" class="btn btn-primary flex-[2]">
+          <i class="bi bi-plus"></i> Create Project
+        </button>
+      </div>
+    </form>
+
+    {% if messages %}
+    <div class="mt-6">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "Base.html" %}
+{% block title %}{{ project.name }} - Dummy Server{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <a href="{% url 'home' %}" class="btn-link text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+    <i class="bi bi-arrow-left mr-1"></i> Back to Dashboard
+  </a>
+</div>
+
+<div class="max-w-6xl mx-auto">
+  <!-- Project Header -->
+  <div class="card mb-6">
+    <div class="card-body">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center">
+              <i class="bi bi-folder text-blue-600 dark:text-blue-400 text-xl"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold text-neutral-900 dark:text-white capitalize">{{ project.name }}</h1>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ project.slug }}</p>
+            </div>
+          </div>
+          {% if project.description %}
+          <p class="text-neutral-600 dark:text-neutral-400 mt-3 whitespace-pre-wrap">{{ project.description }}</p>
+          {% endif %}
+        </div>
+        <div class="flex gap-2">
+          <a href="{% url 'create_route_for_project' project.id %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus"></i> Add Route
+          </a>
+          <button type="button" onclick="openDeleteModal()" class="btn btn-danger btn-sm">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center">
+            <i class="bi bi-signpost text-neutral-600 dark:text-neutral-400"></i>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-neutral-900 dark:text-white">{{ routes.count }}</div>
+            <div class="text-xs text-neutral-500 dark:text-neutral-400">Routes</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center">
+            <i class="bi bi-calendar text-neutral-600 dark:text-neutral-400"></i>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-neutral-900 dark:text-white">{{ project.created_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-neutral-500 dark:text-neutral-400">Created</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center">
+            <i class="bi bi-clock-history text-neutral-600 dark:text-neutral-400"></i>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-neutral-900 dark:text-white">{{ project.updated_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-neutral-500 dark:text-neutral-400">Updated</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Routes List -->
+  <div class="card">
+    <div class="card-header">
+      <div class="flex items-center justify-between">
+        <h5 class="text-sm font-semibold text-neutral-900 dark:text-white">API Routes</h5>
+        <span class="badge badge-secondary">{{ routes.count }} routes</span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {% if routes %}
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Path</th>
+              <th>Status</th>
+              <th>Content Type</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for route in routes %}
+            <tr>
+              <td>
+                <span class="badge {% if route.method == 'GET' %}bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400{% elif route.method == 'POST' %}bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400{% elif route.method == 'PUT' %}bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400{% elif route.method == 'DELETE' %}bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400{% else %}badge-secondary{% endif %}">
+                  {{ route.method }}
+                </span>
+              </td>
+              <td>
+                <code class="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded">{{ route.path }}</code>
+              </td>
+              <td>
+                <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ route.status_code }}</span>
+              </td>
+              <td>
+                <span class="text-xs text-neutral-500 dark:text-neutral-500">{{ route.content_type }}</span>
+              </td>
+              <td>
+                <span class="text-xs text-neutral-500 dark:text-neutral-500">{{ route.created_at|date:"M d, Y" }}</span>
+              </td>
+              <td>
+                <div class="flex gap-3">
+                  <a href="{% url 'route_detail' route.id %}" class="">
+                    <i class="bi bi-eye-fill"></i> 
+                  </a>
+                  <button type="button" onclick="copyUrl('{{ request.scheme }}://{{ request.get_host }}/{{ user.username }}/{{ project.slug }}{{ route.path }}')" class="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white text-sm">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-signpost-split"></i>
+        <h3 class="text-lg font-semibold text-neutral-900 dark:text-white mb-2">No routes yet</h3>
+        <p class="text-neutral-500 dark:text-neutral-400 mb-4">Create your first API route to get started</p>
+        <a href="{% url 'create_route_for_project' project.id %}" class="btn btn-primary">
+          <i class="bi bi-plus"></i> Create Route
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Delete Project</h3>
+      <button type="button" onclick="closeDeleteModal()" class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-neutral-600 dark:text-neutral-400">Are you sure you want to delete <strong>{{ project.name }}</strong>? This will also delete all {{ routes.count }} route(s) in this project.</p>
+      <p class="text-red-600 dark:text-red-400 text-sm mt-2">This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
+      <form method="post" action="{% url 'delete_project' project.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete Project</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openDeleteModal() {
+    document.getElementById('delete-modal').classList.add('show');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('show');
+  }
+
+  function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('URL copied to clipboard!');
+    });
+  }
+</script>
+{% endblock %}

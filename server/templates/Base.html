@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dummy Server{% endblock %}</title>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  
+  <!-- Prevent Flash of Light Theme -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'light';
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      }
+    })();
+  </script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style type="text/tailwindcss">
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #d4d4d8;
+      border-radius: 5px;
+      transition: background 0.2s;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a1a1a1;
+    }
+    
+    /* Dark mode scrollbar */
+    .dark ::-webkit-scrollbar-thumb {
+      background: #52525b;
+    }
+    
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #71717a;
+    }
+    
+    /* Firefox scrollbar */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #d4d4d8 transparent;
+    }
+    
+    .dark * {
+      scrollbar-color: #52525b transparent;
+    }
+    
+    @layer components {
+      .btn {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed;
+      }
+      .btn-primary {
+        @apply bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white hover:bg-neutral-800 dark:hover:bg-neutral-100;
+      }
+      .btn-secondary {
+        @apply bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600;
+      }
+      .btn-danger {
+        @apply bg-red-500 text-white border-red-500 hover:bg-red-600;
+      }
+      .btn-ghost {
+        @apply bg-transparent text-neutral-600 dark:text-neutral-400 border-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white;
+      }
+      .btn-sm {
+        @apply px-3 py-1.5 text-xs;
+      }
+      .btn-lg {
+        @apply px-5 py-3 text-base;
+      }
+      
+      .form-input {
+        @apply w-full px-4 py-3 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-sm transition-all duration-200 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 focus:border-neutral-400 dark:focus:border-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed;
+      }
+      
+      .form-input:hover:not(:focus):not(:disabled) {
+        @apply border-neutral-300 dark:border-neutral-600;
+      }
+      
+      .form-label {
+        @apply block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2;
+      }
+      
+      .form-text {
+        @apply text-xs text-neutral-500 dark:text-neutral-500 mt-1.5;
+      }
+      
+      .card {
+        @apply bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm transition-shadow hover:shadow-md;
+      }
+      
+      .card-header {
+        @apply px-5 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30;
+      }
+      
+      .card-body {
+        @apply p-5;
+      }
+      
+      .alert {
+        @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm mb-4;
+      }
+      .alert-success {
+        @apply bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20;
+      }
+      .alert-danger, .alert-error {
+        @apply bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20;
+      }
+      .alert-warning {
+        @apply bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20;
+      }
+      .alert-info {
+        @apply bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20;
+      }
+      
+      .badge {
+        @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full;
+      }
+      .badge-success {
+        @apply bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400;
+      }
+      .badge-secondary {
+        @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400;
+      }
+      
+      .badge {
+        @apply inline-flex items-center gap-1.5 font-semibold text-xs px-2.5 py-1 rounded-lg;
+      }
+      .badge-secondary {
+        @apply bg-neutral-100 dark:bg-neutral-500/20 text-neutral-700 dark:text-neutral-400;
+      }
+
+      .table {
+        @apply w-full;
+      }
+      .table th, .table td {
+        @apply px-4 py-3.5 text-left border-b border-neutral-200 dark:border-neutral-800;
+      }
+      .table th {
+        @apply text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider bg-neutral-50/50 dark:bg-neutral-800/30;
+      }
+      .table tbody tr:hover td {
+        @apply bg-neutral-50 dark:bg-neutral-800/50;
+      }
+      
+      .dropdown-menu {
+        @apply absolute top-full right-0 mt-2 min-w-[200px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg dark:shadow-2xl dark:shadow-black/20 p-2 z-50 hidden;
+      }
+      .dropdown-menu.show {
+        @apply block;
+      }
+      .dropdown-item {
+        @apply flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 rounded-lg transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 no-underline;
+      }
+      .dropdown-item.danger {
+        @apply text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10;
+      }
+      .dropdown-divider {
+        @apply h-px bg-neutral-200 dark:bg-neutral-700 my-2;
+      }
+      
+      .modal-backdrop {
+        @apply fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 opacity-0 invisible transition-all duration-200;
+      }
+      .modal-backdrop.show {
+        @apply opacity-100 visible;
+      }
+      .modal {
+        @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-2xl max-w-md w-[90%] max-h-[90vh] overflow-auto shadow-2xl scale-95 transition-transform duration-200;
+      }
+      .modal-backdrop.show .modal {
+        @apply scale-100;
+      }
+      .modal-header {
+        @apply flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-700;
+      }
+      .modal-title {
+        @apply text-lg font-semibold text-neutral-900 dark:text-white;
+      }
+      .modal-close {
+        @apply text-2xl text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-none;
+      }
+      .modal-body {
+        @apply p-5;
+      }
+      .modal-footer {
+        @apply flex justify-end gap-3 px-5 py-4 border-t border-neutral-200 dark:border-neutral-700;
+      }
+      
+      .auth-container {
+        @apply min-h-[calc(100vh-64px)] flex items-center justify-center p-6;
+      }
+      .auth-card {
+        @apply w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 shadow-xl dark:shadow-2xl dark:shadow-black/20;
+      }
+      
+      .divider {
+        @apply flex items-center text-center text-sm text-neutral-500 dark:text-neutral-500 my-6;
+      }
+      .divider::before, .divider::after {
+        content: '';
+        @apply flex-1 border-b border-neutral-200 dark:border-neutral-700;
+      }
+      .divider span {
+        @apply px-4;
+      }
+      
+      .empty-state {
+        @apply text-center py-12 px-6;
+      }
+      .empty-state i {
+        @apply text-5xl text-neutral-300 dark:text-neutral-600 mb-4 block;
+      }
+      
+      .btn-link {
+        @apply text-neutral-900 dark:text-white hover:underline bg-transparent border-none p-0 font-medium cursor-pointer;
+      }
+
+      .nav-link {
+        @apply flex items-center gap-1.5 px-3.5 py-2 text-neutral-600 dark:text-neutral-400 text-sm font-medium rounded-lg transition-colors hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 no-underline;
+      }
+      
+      /* HTMX Indicator - use display instead of opacity */
+      .htmx-indicator {
+        display: none;
+      }
+      .htmx-request .htmx-indicator {
+        display: block;
+      }
+      .htmx-request.htmx-indicator {
+        display: block;
+      }
+    }
+  </style>
+
+    <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
+</head>
+<body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans antialiased">
+  <!-- Navbar -->
+  <nav class="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 px-6 h-16 flex items-center justify-between sticky top-0 z-50">
+    <a href="/" class="flex items-center gap-3 font-bold text-lg text-neutral-900 dark:text-white no-underline">
+      <svg viewBox="0 0 32 32" fill="currentColor" class="w-8 h-8">
+        <path d="M16 2L4 8v16l12 6 12-6V8L16 2zm0 2.5l9.5 4.75L16 14l-9.5-4.75L16 4.5zM6 10.5l9 4.5v10.5l-9-4.5V10.5zm20 0v10.5l-9 4.5V15l9-4.5z"/>
+      </svg>
+      Dummy Server
+    </a>
+
+    <ul class="flex items-center gap-2 list-none m-0 p-0">
+      {% if user.is_authenticated %}
+      <li><a href="/" class="nav-link">Dashboard</a></li>
+      <li><a href="{% url 'create_project' %}" class="nav-link">Create Project</a></li>
+      <li><a href="{% url 'create_route' %}" class="nav-link">Create Route</a></li>
+      {% if user.is_staff %}
+      <li><a href="/admin/" class="nav-link">Admin</a></li>
+      {% endif %}
+      <li class="w-px h-6 bg-neutral-200 dark:bg-neutral-700 mx-2"></li>
+      {% endif %}
+
+      <li>
+        <button class="flex items-center justify-center w-9 h-9 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white hover:border-neutral-300 dark:hover:border-neutral-600" onclick="toggleTheme()" aria-label="Toggle theme">
+          <i class="bi bi-sun-fill" id="theme-icon-light"></i>
+          <i class="bi bi-moon-fill hidden" id="theme-icon-dark"></i>
+        </button>
+      </li>
+
+      {% if user.is_authenticated %}
+      <li class="relative">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600" onclick="toggleDropdown(this)">
+          <div class="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-sm font-semibold text-neutral-600 dark:text-neutral-300">{{ user.username|slice:":1"|upper }}</div>
+          <span class="text-sm font-medium text-neutral-900 dark:text-white">{{ user.username }}</span>
+          <i class="bi bi-chevron-down text-xs text-neutral-400"></i>
+        </div>
+        <div class="dropdown-menu">
+          <a href="{% url 'profile' %}" class="dropdown-item">
+            <i class="bi bi-person"></i> Profile
+          </a>
+          <a href="{% url 'create_project' %}" class="dropdown-item">
+            <i class="bi bi-folder-plus"></i> New Project
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="{% url 'logout' %}" class="dropdown-item danger">
+            <i class="bi bi-box-arrow-right"></i> Sign Out
+          </a>
+        </div>
+      </li>
+      {% else %}
+      <li>
+        <a href="{% url 'login' %}" class="btn btn-secondary btn-sm">Sign In</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block extra_js %}{% endblock %}
+
+  <script>
+    // Theme Management
+    function getTheme() {
+      return localStorage.getItem('theme') || 'light';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('theme', theme);
+      updateThemeIcon(theme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = getTheme();
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      setTheme(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+      const lightIcon = document.getElementById('theme-icon-light');
+      const darkIcon = document.getElementById('theme-icon-dark');
+      if (theme === 'dark') {
+        lightIcon.classList.add('hidden');
+        darkIcon.classList.remove('hidden');
+      } else {
+        lightIcon.classList.remove('hidden');
+        darkIcon.classList.add('hidden');
+      }
+    }
+
+    // Initialize theme
+    setTheme(getTheme());
+
+    // Dropdown
+    function toggleDropdown(element) {
+      const menu = element.nextElementSibling;
+      menu.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.relative')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+          menu.classList.remove('show');
+        });
+      }
+    });
+
+    // Modal
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+ 
+  </script>
+</body>
+</html>

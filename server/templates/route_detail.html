@@ -1,0 +1,881 @@
+{% extends "Base.html" %}
+{% block title %}{{ route.method }} {{ route.path }} - Dummy Server{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <a href="{% url 'project_detail' route.project.id %}" class="btn-link text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+    <i class="bi bi-arrow-left mr-1"></i> Back to {{ route.project.name }}
+  </a>
+</div>
+
+<!-- Messages -->
+{% if messages %}
+<div class="max-w-4xl mx-auto mb-6">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}">
+    <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'error' %}bi-exclamation-triangle-fill{% elif message.tags == 'warning' %}bi-exclamation-circle-fill{% else %}bi-info-circle-fill{% endif %}"></i>
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="max-w-4xl mx-auto">
+  <!-- Route Header -->
+  <div class="card mb-6">
+    <div class="card-body">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center">
+              <i class="bi bi-signpost-split text-blue-600 dark:text-blue-400 text-xl"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge 
+                  {% if route.method == 'GET' %}bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400
+                  {% elif route.method == 'POST' %}bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400
+                  {% elif route.method == 'PUT' %}bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400
+                  {% elif route.method == 'DELETE' %}bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400
+                  {% else %}bg-neutral-100 dark:bg-neutral-500/20 text-neutral-700 dark:text-neutral-400
+                  {% endif %}
+                  font-semibold text-xs px-2.5 py-1 rounded-lg">
+                  {{ route.method }}
+                </span>
+                <code class="text-lg font-mono text-neutral-900 dark:text-white">{{ route.path }}</code>
+              </div>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ route.project.name }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a href="{% url 'edit_route' route.id %}" class="btn btn-secondary btn-sm">
+            <i class="bi bi-pencil"></i> Edit
+          </a>
+          <button type="button" onclick="openDeleteModal()" class="btn btn-danger btn-sm">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Route Info -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+        <div>
+          <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Route Type</div>
+          <div class="text-sm font-semibold text-neutral-900 dark:text-white">
+            {% if route.route_type == 'EMAIL_OTP' %}
+              <span class="badge bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 text-xs px-2 py-1 rounded">Email OTP</span>
+            {% else %}
+              <span class="badge bg-neutral-100 dark:bg-neutral-500/20 text-neutral-700 dark:text-neutral-400 text-xs px-2 py-1 rounded">Standard</span>
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Status Code</div>
+          <div class="text-sm font-semibold text-neutral-900 dark:text-white">{{ route.status_code }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Content Type</div>
+          <div class="text-sm font-semibold text-neutral-900 dark:text-white">{{ route.content_type }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Updated</div>
+          <div class="text-sm font-semibold text-neutral-900 dark:text-white">{{ route.updated_at|date:"M d, Y" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Request Body Validation -->
+  {% if route.request_body %}
+  <div class="card mb-6">
+    <div class="card-header">
+      <div class="flex items-center justify-between">
+        <h5 class="text-sm font-semibold text-neutral-900 dark:text-white">Expected Request Body</h5>
+        <span class="text-xs text-neutral-500 dark:text-neutral-400">Required for {{ route.method }} requests</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="relative">
+        <pre class="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-lg text-sm overflow-auto"><code class="text-neutral-900 dark:text-white">{{ route.request_body|safe }}</code></pre>
+        <button type="button" onclick="copyRequestBody()" class="absolute top-2 right-2 btn btn-secondary btn-sm">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+      <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg">
+        <div class="flex items-start gap-2">
+          <i class="bi bi-info-circle-fill text-blue-600 dark:text-blue-400 text-sm mt-0.5"></i>
+          <p class="text-xs text-blue-700 dark:text-blue-400">Requests must match this structure exactly to receive the configured response</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Endpoint URL -->
+  <div class="card mb-6">
+    <div class="card-header">
+      <div class="flex items-center justify-between">
+        <h5 class="text-sm font-semibold text-neutral-900 dark:text-white">Endpoint URL</h5>
+        <button type="button" onclick="copyEndpoint()" class="btn btn-secondary btn-sm">
+          <i class="bi bi-clipboard"></i> Copy
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <code id="endpoint-url" class="block p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-sm break-all">
+        {{ request.scheme }}://{{ request.get_host }}/{{ route.project.owner.username }}/{{ route.project.slug }}{{ route.path }}
+      </code>
+    </div>
+  </div>
+
+  <!-- Response Preview -->
+  <div class="card mb-6">
+    <div class="card-header">
+      <div class="flex items-center justify-between">
+        <h5 class="text-sm font-semibold text-neutral-900 dark:text-white">Response Preview</h5>
+        <button type="button" onclick="testEndpoint()" class="btn btn-primary btn-sm">
+          <i class="bi bi-play-fill"></i> Test Endpoint
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if route.route_type == 'EMAIL_OTP' %}
+      <!-- EMAIL OTP Simple Interface -->
+      <div class="flex flex-col md:grid-cols-2 gap-6 mb-6">
+        <!-- Send OTP Card -->
+        <div class="card bg-purple-50 dark:bg-purple-500/10">
+          <div class="card-header border-bottom border-purple-300 dark:border-purple-500/20">
+            <h6 class="text-xs font-bold text-purple-700 dark:text-purple-300 mb-0">Send OTP</h6>
+          </div>
+          <div class="card-body">
+            <label class="form-label text-sm">Email Address</label>
+            <div class="flex gap-2 mb-2">
+              <input type="email" id="otp-email-send" class="form-input flex-1" placeholder="user@example.com" oninput="updateRequestPreviewSend()">
+              <button type="button" onclick="sendOTP()" class="btn btn-primary btn-sm whitespace-nowrap">
+                <i class="bi bi-envelope"></i> Send OTP
+              </button>
+            </div>
+            <div class="mt-2">
+              <div class="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">Request JSON Preview:</div>
+              <pre id="request-preview-send" class="bg-white dark:bg-neutral-900 p-2 rounded text-xs border border-purple-200 dark:border-purple-500/30 overflow-auto"><code class="text-neutral-900 dark:text-white">{}</code></pre>
+              <button type="button" onclick="copyRequestPreviewSend()" class="mt-2 btn btn-secondary btn-xs">
+                <i class="bi bi-clipboard"></i> Copy
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- Verify OTP Card -->
+        <div class="card bg-emerald-50 dark:bg-emerald-500/10">
+          <div class="card-header border-bottom border-emerald-300 dark:border-emerald-500/20">
+            <h6 class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mb-0">Verify OTP</h6>
+          </div>
+          <div class="card-body">
+            <label class="form-label text-sm">Email Address</label>
+            <input type="email" id="otp-email-verify" class="form-input mb-2" placeholder="user@example.com" oninput="updateRequestPreviewVerify()">
+            <label class="form-label text-sm">OTP Code</label>
+            <input type="text" id="otp-code-verify" class="form-input mb-2" placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric" oninput="updateRequestPreviewVerify()">
+            <button type="button" onclick="verifyOTP()" class="btn btn-success btn-sm whitespace-nowrap mb-2">
+              <i class="bi bi-shield-check"></i> Verify
+            </button>
+            <div class="mt-2">
+              <div class="text-xs font-medium text-emerald-700 dark:text-emerald-300 mb-2">Request JSON Preview:</div>
+              <pre id="request-preview-verify" class="bg-white dark:bg-neutral-900 p-2 rounded text-xs border border-emerald-200 dark:border-emerald-500/30 overflow-auto"><code class="text-neutral-900 dark:text-white">{}</code></pre>
+              <button type="button" onclick="copyRequestPreviewVerify()" class="mt-2 btn btn-secondary btn-xs">
+                <i class="bi bi-clipboard"></i> Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        function updateRequestPreviewSend() {
+          const email = document.getElementById('otp-email-send').value.trim();
+          const preview = document.getElementById('request-preview-send').querySelector('code');
+          let obj = { action: 'send', email: email || 'user@example.com' };
+          preview.textContent = JSON.stringify(obj, null, 2);
+        }
+        function copyRequestPreviewSend() {
+          const email = document.getElementById('otp-email-send').value.trim();
+          let obj = { action: 'send', email: email || 'user@example.com' };
+          navigator.clipboard.writeText(JSON.stringify(obj, null, 2)).then(() => { alert('Copied!'); });
+        }
+        function updateRequestPreviewVerify() {
+          const email = document.getElementById('otp-email-verify').value.trim();
+          const otp = document.getElementById('otp-code-verify').value.trim();
+          const preview = document.getElementById('request-preview-verify').querySelector('code');
+          let obj = { action: 'verify', email: email || 'user@example.com', otp: otp || '123456' };
+          preview.textContent = JSON.stringify(obj, null, 2);
+        }
+        function copyRequestPreviewVerify() {
+          const email = document.getElementById('otp-email-verify').value.trim();
+          const otp = document.getElementById('otp-code-verify').value.trim();
+          let obj = { action: 'verify', email: email || 'user@example.com', otp: otp || '123456' };
+          navigator.clipboard.writeText(JSON.stringify(obj, null, 2)).then(() => { alert('Copied!'); });
+        }
+        // Override sendOTP and verifyOTP to use correct fields
+        async function sendOTP() {
+          const email = document.getElementById('otp-email-send').value.trim();
+          if (!email) { alert('Please enter an email address'); return; }
+          if (!email.includes('@')) { alert('Please enter a valid email address'); return; }
+          const url = document.getElementById('endpoint-url').textContent.trim();
+          const resultsDiv = document.getElementById('test-results');
+          const outputDiv = document.getElementById('test-output');
+          resultsDiv.classList.remove('hidden');
+          outputDiv.innerHTML = '<div class="flex items-center gap-3"><div class="animate-spin"><i class="bi bi-arrow-repeat text-blue-600 dark:text-blue-400"></i></div><span class="text-sm text-neutral-600 dark:text-neutral-400">Sending OTP...</span></div>';
+          try {
+            const startTime = Date.now();
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'send', email })
+            });
+            const endTime = Date.now();
+            const data = await response.text();
+            let parsedData;
+            try { parsedData = JSON.parse(data); } catch { parsedData = data; }
+            const statusClass = response.ok ? 'emerald' : 'red';
+            const statusIcon = response.ok ? 'check-circle-fill' : 'exclamation-triangle-fill';
+            outputDiv.innerHTML = `
+              <div class="space-y-4">
+                <div class="flex items-center gap-3 p-3 bg-${statusClass}-50 dark:bg-${statusClass}-500/10 border border-${statusClass}-200 dark:border-${statusClass}-500/20 rounded-lg">
+                  <i class="bi bi-${statusIcon} text-${statusClass}-600 dark:text-${statusClass}-400 text-lg"></i>
+                  <div>
+                    <div class="text-sm font-medium text-${statusClass}-900 dark:text-${statusClass}-100">${response.ok ? 'OTP Sent Successfully' : 'Failed to Send OTP'}</div>
+                    <div class="text-xs text-${statusClass}-600 dark:text-${statusClass}-400">Status: ${response.status} • Time: ${endTime - startTime}ms</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Response:</div>
+                  <pre class="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-lg text-sm overflow-auto max-h-64"><code class="text-neutral-900 dark:text-white">${typeof parsedData === 'object' ? JSON.stringify(parsedData, null, 2) : parsedData}</code></pre>
+                </div>
+              </div>
+            `;
+          } catch (error) {
+            outputDiv.innerHTML = `
+              <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+                <i class="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400 text-lg mt-0.5"></i>
+                <div>
+                  <div class="text-sm font-medium text-red-900 dark:text-red-100">Request Failed</div>
+                  <div class="text-xs text-red-600 dark:text-red-400 mt-1">${error.message}</div>
+                </div>
+              </div>
+            `;
+          }
+        }
+        async function verifyOTP() {
+          const email = document.getElementById('otp-email-verify').value.trim();
+          const otp = document.getElementById('otp-code-verify').value.trim();
+          if (!email || !otp) { alert('Please enter both email and OTP code'); return; }
+          const url = document.getElementById('endpoint-url').textContent.trim();
+          const resultsDiv = document.getElementById('test-results');
+          const outputDiv = document.getElementById('test-output');
+          resultsDiv.classList.remove('hidden');
+          outputDiv.innerHTML = '<div class="flex items-center gap-3"><div class="animate-spin"><i class="bi bi-arrow-repeat text-blue-600 dark:text-blue-400"></i></div><span class="text-sm text-neutral-600 dark:text-neutral-400">Verifying OTP...</span></div>';
+          try {
+            const startTime = Date.now();
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'verify', email, otp })
+            });
+            const endTime = Date.now();
+            const data = await response.text();
+            let parsedData;
+            try { parsedData = JSON.parse(data); } catch { parsedData = data; }
+            const statusClass = response.ok ? 'emerald' : 'red';
+            const statusIcon = response.ok ? 'check-circle-fill' : 'exclamation-triangle-fill';
+            outputDiv.innerHTML = `
+              <div class="space-y-4">
+                <div class="flex items-center gap-3 p-3 bg-${statusClass}-50 dark:bg-${statusClass}-500/10 border border-${statusClass}-200 dark:border-${statusClass}-500/20 rounded-lg">
+                  <i class="bi bi-${statusIcon} text-${statusClass}-600 dark:text-${statusClass}-400 text-lg"></i>
+                  <div>
+                    <div class="text-sm font-medium text-${statusClass}-900 dark:text-${statusClass}-100">${response.ok ? 'OTP Verified Successfully' : 'Verification Failed'}</div>
+                    <div class="text-xs text-${statusClass}-600 dark:text-${statusClass}-400">Status: ${response.status} • Time: ${endTime - startTime}ms</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Response:</div>
+                  <pre class="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-lg text-sm overflow-auto max-h-64"><code class="text-neutral-900 dark:text-white">${typeof parsedData === 'object' ? JSON.stringify(parsedData, null, 2) : parsedData}</code></pre>
+                </div>
+              </div>
+            `;
+          } catch (error) {
+            outputDiv.innerHTML = `
+              <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+                <i class="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400 text-lg mt-0.5"></i>
+                <div>
+                  <div class="text-sm font-medium text-red-900 dark:text-red-100">Request Failed</div>
+                  <div class="text-xs text-red-600 dark:text-red-400 mt-1">${error.message}</div>
+                </div>
+              </div>
+            `;
+          }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+          updateRequestPreviewSend();
+          updateRequestPreviewVerify();
+        });
+      </script>
+      {% elif route.method in 'POST,PUT,PATCH' %}
+      <!-- Standard Request Body Input -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <label class="form-label text-sm mb-0">Request Body (JSON)</label>
+          {% if route.request_body %}
+            <span class="badge bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 text-xs px-2 py-0.5 rounded">Required</span>
+          {% else %}
+            <span class="badge bg-neutral-100 dark:bg-neutral-500/20 text-neutral-600 dark:text-neutral-400 text-xs px-2 py-0.5 rounded">Optional</span>
+          {% endif %}
+        </div>
+        <textarea id="test-request-body" class="form-input font-mono text-sm" rows="8" placeholder='{
+  "key": "value"
+}'>{% if route.request_body %}{{ route.request_body|safe }}{% endif %}</textarea>
+        {% if route.request_body %}
+          <div class="mt-2 p-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg">
+            <div class="flex items-start gap-2">
+              <i class="bi bi-exclamation-triangle-fill text-amber-600 dark:text-amber-400 text-xs mt-0.5"></i>
+              <p class="text-xs text-amber-700 dark:text-amber-400">Must match the expected structure above exactly</p>
+            </div>
+          </div>
+        {% else %}
+          <div class="form-text mt-2">Optional JSON payload for testing</div>
+        {% endif %}
+      </div>
+      
+      <button type="button" onclick="testEndpoint()" class="btn btn-primary mb-4">
+        <i class="bi bi-play-fill"></i> Test Endpoint
+      </button>
+      {% endif %}
+      
+    
+      
+      {% if route.response_json %}
+      <div class="relative">
+        <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Expected Response:</div>
+        <pre class="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-lg text-sm overflow-auto max-h-96"><code class="text-neutral-900 dark:text-white">{{ route.response_json|safe }}</code></pre>
+        <button type="button" onclick="copyResponse()" class="absolute top-6 right-2 btn btn-secondary btn-sm">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+      {% elif route.response_file %}
+      <div class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl">
+        <i class="bi bi-file-earmark-text text-blue-600 dark:text-blue-400 text-2xl"></i>
+        <div class="flex-1">
+          <div class="text-sm font-medium text-blue-900 dark:text-blue-100">{{ route.response_file.name|slice:"4:" }}</div>
+          <div class="text-xs text-blue-600 dark:text-blue-400">JSON file response</div>
+        </div>
+        <a href="{{ route.response_file.url }}" download class="btn btn-secondary btn-sm">
+          <i class="bi bi-download"></i> Download
+        </a>
+      </div>
+      {% elif route.route_type == 'EMAIL_OTP' %}
+      <div class="space-y-4">
+        <!-- Send OTP Example -->
+        <div class="border border-purple-200 dark:border-purple-500/20 rounded-xl overflow-hidden">
+          <div class="bg-purple-100 dark:bg-purple-500/20 px-4 py-2 border-b border-purple-200 dark:border-purple-500/20">
+            <div class="flex items-center gap-2">
+              <i class="bi bi-send text-purple-600 dark:text-purple-400"></i>
+              <span class="text-sm font-semibold text-purple-900 dark:text-purple-100">Send OTP Request</span>
+            </div>
+          </div>
+          <div class="bg-purple-50 dark:bg-purple-500/10 p-4">
+            <div class="mb-3">
+              <div class="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">Request Body:</div>
+              <div class="relative">
+                <pre class="bg-white dark:bg-neutral-900 p-3 rounded-lg text-sm border border-purple-200 dark:border-purple-500/30"><code class="text-neutral-900 dark:text-white">{
+  "action": "send",
+  "email": "user@example.com"
+}</code></pre>
+                <button type="button" onclick="copySendExample()" class="absolute top-2 right-2 px-2 py-1 text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded hover:bg-purple-200 dark:hover:bg-purple-500/30">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">Expected Response:</div>
+              <pre class="bg-white dark:bg-neutral-900 p-3 rounded-lg text-sm border border-purple-200 dark:border-purple-500/30"><code class="text-neutral-900 dark:text-white">{
+  "success": true,
+  "message": "OTP sent to email"
+}</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verify OTP Example -->
+        <div class="border border-emerald-200 dark:border-emerald-500/20 rounded-xl overflow-hidden">
+          <div class="bg-emerald-100 dark:bg-emerald-500/20 px-4 py-2 border-b border-emerald-200 dark:border-emerald-500/20">
+            <div class="flex items-center gap-2">
+              <i class="bi bi-shield-check text-emerald-600 dark:text-emerald-400"></i>
+              <span class="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Verify OTP Request</span>
+            </div>
+          </div>
+          <div class="bg-emerald-50 dark:bg-emerald-500/10 p-4">
+            <div class="mb-3">
+              <div class="text-xs font-medium text-emerald-700 dark:text-emerald-300 mb-2">Request Body:</div>
+              <div class="relative">
+                <pre class="bg-white dark:bg-neutral-900 p-3 rounded-lg text-sm border border-emerald-200 dark:border-emerald-500/30"><code class="text-neutral-900 dark:text-white">{
+  "action": "verify",
+  "email": "user@example.com",
+  "otp": "123456"
+}</code></pre>
+                <button type="button" onclick="copyVerifyExample()" class="absolute top-2 right-2 px-2 py-1 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded hover:bg-emerald-200 dark:hover:bg-emerald-500/30">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs font-medium text-emerald-700 dark:text-emerald-300 mb-2">Expected Response (Success):</div>
+              <pre class="bg-white dark:bg-neutral-900 p-3 rounded-lg text-sm border border-emerald-200 dark:border-emerald-500/30 mb-3"><code class="text-neutral-900 dark:text-white">{
+  "success": true,
+  "message": "OTP verified successfully",
+  "email": "user@example.com"
+}</code></pre>
+              <div class="text-xs font-medium text-red-700 dark:text-red-300 mb-2">Expected Response (Failed):</div>
+              <pre class="bg-white dark:bg-neutral-900 p-3 rounded-lg text-sm border border-red-200 dark:border-red-500/30"><code class="text-neutral-900 dark:text-white">{
+  "error": "Invalid OTP code"
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+ 
+  <!-- Test Results -->
+  <div id="test-results" class="card hidden">
+    <div class="card-header">
+      <h5 class="text-sm font-semibold text-neutral-900 dark:text-white">Test Results</h5>
+    </div>
+    <div class="card-body">
+      <div id="test-output"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-modal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Delete Route</h3>
+      <button type="button" onclick="closeDeleteModal()" class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-neutral-600 dark:text-neutral-400">Are you sure you want to delete this route?</p>
+      <code class="block mt-2 p-2 bg-neutral-100 dark:bg-neutral-800 rounded text-sm">{{ route.method }} {{ route.path }}</code>
+      <p class="text-red-600 dark:text-red-400 text-sm mt-2">This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
+      <form method="post" action="{% url 'delete_route' route.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete Route</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openDeleteModal() {
+    document.getElementById('delete-modal').classList.add('show');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('show');
+  }
+
+  function copyEndpoint() {
+    const url = document.getElementById('endpoint-url').textContent.trim();
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Endpoint URL copied to clipboard!');
+    });
+  }
+
+  function copyResponse() {
+    {% if route.response_json %}
+    const responseText = document.querySelector('#test-results pre code')?.textContent || '{{ route.response_json|escapejs }}';
+    navigator.clipboard.writeText(responseText).then(() => {
+      alert('Response copied to clipboard!');
+    });
+    {% else %}
+    alert('No JSON response to copy');
+    {% endif %}
+  }
+
+  function copyRequestBody() {
+    const requestBody = '{{ route.request_body|escapejs }}';
+    navigator.clipboard.writeText(requestBody).then(() => {
+      alert('Request body copied to clipboard!');
+    });
+  }
+
+  function copySendExample() {
+    const sendExample = JSON.stringify({
+      "action": "send",
+      "email": "user@example.com"
+    }, null, 2);
+    navigator.clipboard.writeText(sendExample).then(() => {
+      alert('Send OTP example copied to clipboard!');
+    });
+  }
+
+  function copyVerifyExample() {
+    const verifyExample = JSON.stringify({
+      "action": "verify",
+      "email": "user@example.com",
+      "otp": "123456"
+    }, null, 2);
+    navigator.clipboard.writeText(verifyExample).then(() => {
+      alert('Verify OTP example copied to clipboard!');
+    });
+  }
+
+  // Email OTP Testing Functions
+  async function sendOTP() {
+    const email = document.getElementById('otp-email-send').value.trim();
+    if (!email) { alert('Please enter an email address'); return; }
+    if (!email.includes('@')) { alert('Please enter a valid email address'); return; }
+    const url = document.getElementById('endpoint-url').textContent.trim();
+    const resultsDiv = document.getElementById('test-results');
+    const outputDiv = document.getElementById('test-output');
+    resultsDiv.classList.remove('hidden');
+    outputDiv.innerHTML = '<div class="flex items-center gap-3"><div class="animate-spin"><i class="bi bi-arrow-repeat text-blue-600 dark:text-blue-400"></i></div><span class="text-sm text-neutral-600 dark:text-neutral-400">Sending OTP...</span></div>';
+    try {
+      const startTime = Date.now();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', email })
+      });
+      const endTime = Date.now();
+      const data = await response.text();
+      let parsedData;
+      try { parsedData = JSON.parse(data); } catch { parsedData = data; }
+      const statusClass = response.ok ? 'emerald' : 'red';
+      const statusIcon = response.ok ? 'check-circle-fill' : 'exclamation-triangle-fill';
+      outputDiv.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 p-3 bg-${statusClass}-50 dark:bg-${statusClass}-500/10 border border-${statusClass}-200 dark:border-${statusClass}-500/20 rounded-lg">
+            <i class="bi bi-${statusIcon} text-${statusClass}-600 dark:text-${statusClass}-400 text-lg"></i>
+            <div>
+              <div class="text-sm font-medium text-${statusClass}-900 dark:text-${statusClass}-100">${response.ok ? 'OTP Sent Successfully' : 'Failed to Send OTP'}</div>
+              <div class="text-xs text-${statusClass}-600 dark:text-${statusClass}-400">Status: ${response.status} • Time: ${endTime - startTime}ms</div>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Response:</div>
+            <pre class="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-lg text-sm overflow-auto max-h-64"><code class="text-neutral-900 dark:text-white">${typeof parsedData === 'object' ? JSON.stringify(parsedData, null, 2) : parsedData}</code></pre>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      outputDiv.innerHTML = `
+        <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+          <i class="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400 text-lg mt-0.5"></i>
+          <div>
+            <div class="text-sm font-medium text-red-900 dark:text-red-100">Request Failed</div>
+            <div class="text-xs text-red-600 dark:text-red-400 mt-1">${error.message}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  async function verifyOTP() {
+    const email = document.getElementById('otp-email-verify').value.trim();
+    const otp = document.getElementById('otp-code-verify').value.trim();
+    if (!email || !otp) { alert('Please enter both email and OTP code'); return; }
+    const url = document.getElementById('endpoint-url').textContent.trim();
+    const resultsDiv = document.getElementById('test-results');
+    const outputDiv = document.getElementById('test-output');
+    resultsDiv.classList.remove('hidden');
+    outputDiv.innerHTML = '<div class="flex items-center gap-3"><div class="animate-spin"><i class="bi bi-arrow-repeat text-blue-600 dark:text-blue-400"></i></div><span class="text-sm text-neutral-600 dark:text-neutral-400">Verifying OTP...</span></div>';
+    try {
+      const startTime = Date.now();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', email, otp })
+      });
+      const endTime = Date.now();
+      const data = await response.text();
+      let parsedData;
+      try { parsedData = JSON.parse(data); } catch { parsedData = data; }
+      const statusClass = response.ok ? 'emerald' : 'red';
+      const statusIcon = response.ok ? 'check-circle-fill' : 'exclamation-triangle-fill';
+      outputDiv.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 p-3 bg-${statusClass}-50 dark:bg-${statusClass}-500/10 border border-${statusClass}-200 dark:border-${statusClass}-500/20 rounded-lg">
+            <i class="bi bi-${statusIcon} text-${statusClass}-600 dark:text-${statusClass}-400 text-lg"></i>
+            <div>
+              <div class="text-sm font-medium text-${statusClass}-900 dark:text-${statusClass}-100">${response.ok ? 'OTP Verified Successfully' : 'Verification Failed'}</div>
+              <div class="text-xs text-${statusClass}-600 dark:text-${statusClass}-400">Status: ${response.status} • Time: ${endTime - startTime}ms</div>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Response:</div>
+            <pre class="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-lg text-sm overflow-auto max-h-64"><code class="text-neutral-900 dark:text-white">${typeof parsedData === 'object' ? JSON.stringify(parsedData, null, 2) : parsedData}</code></pre>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      outputDiv.innerHTML = `
+        <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+          <i class="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400 text-lg mt-0.5"></i>
+          <div>
+            <div class="text-sm font-medium text-red-900 dark:text-red-100">Request Failed</div>
+            <div class="text-xs text-red-600 dark:text-red-400 mt-1">${error.message}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function updateRequestPreview() {
+    const email = document.getElementById('otp-email')?.value.trim() || '';
+    const otp = document.getElementById('otp-code')?.value.trim() || '';
+    const previewDiv = document.getElementById('request-preview');
+    
+    if (!previewDiv) return;
+
+    let requestObj = {};
+    
+    if (otp) {
+      // Show verify request
+      requestObj = {
+        "action": "verify",
+        "email": email || "user@example.com",
+        "otp": otp
+      };
+    } else if (email) {
+      // Show send request
+      requestObj = {
+        "action": "send",
+        "email": email
+      };
+    } else {
+      // Empty state
+      requestObj = {
+        "action": "send",
+        "email": "user@example.com"
+      };
+    }
+    
+    previewDiv.innerHTML = `<code class="text-neutral-900 dark:text-white">${JSON.stringify(requestObj, null, 2)}</code>`;
+  }
+
+  function copyRequestPreview() {
+    const email = document.getElementById('otp-email')?.value.trim() || '';
+    const otp = document.getElementById('otp-code')?.value.trim() || '';
+    
+    let requestObj = {};
+    
+    if (otp) {
+      requestObj = {
+        "action": "verify",
+        "email": email || "user@example.com",
+        "otp": otp
+      };
+    } else if (email) {
+      requestObj = {
+        "action": "send",
+        "email": email
+      };
+    } else {
+      alert('Please enter an email address');
+      return;
+    }
+    
+    navigator.clipboard.writeText(JSON.stringify(requestObj, null, 2)).then(() => {
+      alert('Request JSON copied to clipboard!');
+    });
+  }
+
+  // Function to fetch and display verified emails
+  async function loadVerifiedEmails() {
+    const container = document.getElementById('verified-emails-container');
+    const listPath = '/verify/list';
+    const url = '{{ request.scheme }}://{{ request.get_host }}/{{ route.project.owner.username }}/{{ route.project.slug }}' + listPath;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.verified_emails && data.verified_emails.length > 0) {
+        let html = `
+          <div class="space-y-2">
+            <div class="text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-3">
+              <i class="bi bi-check-circle-fill mr-2"></i>
+              ${data.total_verified} email(s) verified
+            </div>
+            <div class="space-y-2">
+        `;
+        
+        data.verified_emails.forEach((email, index) => {
+          html += `
+            <div class="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition">
+              <div class="flex items-center gap-3 flex-1">
+                <i class="bi bi-envelope-check text-emerald-600 dark:text-emerald-400"></i>
+                <div class="break-all">
+                  <div class="text-sm font-medium text-neutral-900 dark:text-white">${email}</div>
+                </div>
+              </div>
+              <button type="button" onclick="copyEmail('${email}')" class="btn btn-secondary btn-xs whitespace-nowrap ml-2">
+                <i class="bi bi-clipboard"></i>
+              </button>
+            </div>
+          `;
+        });
+        
+        html += `
+            </div>
+          </div>
+        `;
+        
+        container.innerHTML = html;
+      } else if (data.success) {
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-8 text-neutral-500 dark:text-neutral-400">
+            <i class="bi bi-inbox text-3xl opacity-50 mb-3"></i>
+            <p class="text-sm">No verified emails yet</p>
+            <p class="text-xs opacity-75 mt-1">Start by sending and verifying emails</p>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg">
+            <i class="bi bi-info-circle-fill text-amber-600 dark:text-amber-400 text-lg mt-0.5"></i>
+            <div>
+              <div class="text-sm font-medium text-amber-900 dark:text-amber-100">Unable to Load</div>
+              <div class="text-xs text-amber-600 dark:text-amber-400 mt-1">${data.error || 'Could not fetch verified emails'}</div>
+            </div>
+          </div>
+        `;
+      }
+    } catch (error) {
+      container.innerHTML = `
+        <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+          <i class="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400 text-lg mt-0.5"></i>
+          <div>
+            <div class="text-sm font-medium text-red-900 dark:text-red-100">Failed to Load</div>
+            <div class="text-xs text-red-600 dark:text-red-400 mt-1">${error.message}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function refreshVerifiedEmails() {
+    loadVerifiedEmails();
+  }
+
+  function copyEmail(email) {
+    navigator.clipboard.writeText(email).then(() => {
+      alert('Email copied to clipboard!');
+    });
+  }
+
+  async function testEndpoint() {
+    const url = document.getElementById('endpoint-url').textContent.trim();
+    const method = '{{ route.method }}';
+    const resultsDiv = document.getElementById('test-results');
+    const outputDiv = document.getElementById('test-output');
+    const requestBodyTextarea = document.getElementById('test-request-body');
+
+    resultsDiv.classList.remove('hidden');
+    outputDiv.innerHTML = '<div class="flex items-center gap-3"><div class="animate-spin"><i class="bi bi-arrow-repeat text-blue-600 dark:text-blue-400"></i></div><span class="text-sm text-neutral-600 dark:text-neutral-400">Testing endpoint...</span></div>';
+
+    try {
+      const startTime = Date.now();
+      const options = { method: method };
+      
+      // Add request body for POST/PUT/PATCH
+      if (['POST', 'PUT', 'PATCH'].includes(method) && requestBodyTextarea) {
+        const bodyText = requestBodyTextarea.value.trim();
+        if (bodyText) {
+          try {
+            // Validate JSON before sending
+            JSON.parse(bodyText);
+            options.headers = { 'Content-Type': 'application/json' };
+            options.body = bodyText;
+          } catch (e) {
+            let errorHint = '';
+            if (e.message.includes("property name") || bodyText.includes("'")) {
+              errorHint = '<div class="text-xs text-red-500 dark:text-red-400 mt-2 p-2 bg-red-100 dark:bg-red-500/20 rounded"><strong>Tip:</strong> JSON requires double quotes (") not single quotes (\') for property names and strings.</div>';
+            }
+            outputDiv.innerHTML = `
+              <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+                <i class="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400 text-lg mt-0.5"></i>
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-red-900 dark:text-red-100">Invalid JSON in Request Body</div>
+                  <div class="text-xs text-red-600 dark:text-red-400 mt-1">${e.message}</div>
+                  ${errorHint}
+                </div>
+              </div>
+            `;
+            return;
+          }
+        }
+      }
+      
+      const response = await fetch(url, options);
+      const endTime = Date.now();
+      const data = await response.text();
+      
+      let parsedData;
+      try {
+        parsedData = JSON.parse(data);
+      } catch {
+        parsedData = data;
+      }
+
+      const statusClass = response.ok ? 'emerald' : 'red';
+      const statusIcon = response.ok ? 'check-circle-fill' : 'exclamation-triangle-fill';
+
+      outputDiv.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 p-3 bg-${statusClass}-50 dark:bg-${statusClass}-500/10 border border-${statusClass}-200 dark:border-${statusClass}-500/20 rounded-lg">
+            <i class="bi bi-${statusIcon} text-${statusClass}-600 dark:text-${statusClass}-400 text-lg"></i>
+            <div>
+              <div class="text-sm font-medium text-${statusClass}-900 dark:text-${statusClass}-100">${response.ok ? 'Request Successful' : 'Request Failed'}</div>
+              <div class="text-xs text-${statusClass}-600 dark:text-${statusClass}-400">Status: ${response.status} • Time: ${endTime - startTime}ms</div>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Response:</div>
+            <pre class="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-lg text-sm overflow-auto max-h-64"><code class="text-neutral-900 dark:text-white">${typeof parsedData === 'object' ? JSON.stringify(parsedData, null, 2) : parsedData}</code></pre>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      outputDiv.innerHTML = `
+        <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+          <i class="bi bi-exclamation-triangle-fill text-red-600 dark:text-red-400 text-lg mt-0.5"></i>
+          <div>
+            <div class="text-sm font-medium text-red-900 dark:text-red-100">Request Failed</div>
+            <div class="text-xs text-red-600 dark:text-red-400 mt-1">${error.message}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Initialize preview when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if route.route_type == 'EMAIL_OTP' %}
+    updateRequestPreview();
+    loadVerifiedEmails();
+    {% else %}
+    updateRequestPreview();
+    {% endif %}
+  });
+</script>
+{% endblock %}

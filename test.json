@@ -1,0 +1,309 @@
+[
+  {
+    "id": 1,
+    "username": "johndoe",
+    "email": "john.doe@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "isActive": true,
+    "registrationDate": "2023-01-15T10:00:00Z",
+    "lastLogin": "2024-03-01T14:30:00Z",
+    "roles": [
+      "user",
+      "premium"
+    ],
+    "address": {
+      "street": "123 Main St",
+      "city": "Anytown",
+      "state": "CA",
+      "zipCode": "90210",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 2,
+    "username": "janedoe",
+    "email": "jane.doe@example.com",
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "isActive": true,
+    "registrationDate": "2023-02-20T11:30:00Z",
+    "lastLogin": "2024-02-28T09:15:00Z",
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "456 Oak Ave",
+      "city": "Sometwon",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 3,
+    "username": "peterjones",
+    "email": "peter.jones@example.com",
+    "firstName": "Peter",
+    "lastName": "Jones",
+    "isActive": false,
+    "registrationDate": "2022-11-01T08:00:00Z",
+    "lastLogin": "2023-05-10T16:00:00Z",
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "789 Pine Ln",
+      "city": "Othercity",
+      "state": "TX",
+      "zipCode": "73301",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 4,
+    "username": "sarahsmith",
+    "email": "sarah.smith@example.com",
+    "firstName": "Sarah",
+    "lastName": "Smith",
+    "isActive": true,
+    "registrationDate": "2024-01-05T09:45:00Z",
+    "lastLogin": "2024-03-02T10:00:00Z",
+    "roles": [
+      "user",
+      "admin"
+    ],
+    "address": {
+      "street": "101 Maple Rd",
+      "city": "Newtown",
+      "state": "FL",
+      "zipCode": "32003",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 5,
+    "username": "mikebrown",
+    "email": "mike.brown@example.com",
+    "firstName": "Mike",
+    "lastName": "Brown",
+    "isActive": true,
+    "registrationDate": "2023-07-10T13:15:00Z",
+    "lastLogin": "2024-03-01T11:00:00Z",
+    "roles": [
+      "user",
+      "moderator"
+    ],
+    "address": {
+      "street": "202 Birch Ct",
+      "city": "Oldville",
+      "state": "WA",
+      "zipCode": "98001",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 6,
+    "username": "emilywhite",
+    "email": "emily.white@example.com",
+    "firstName": "Emily",
+    "lastName": "White",
+    "isActive": true,
+    "registrationDate": "2023-03-25T16:00:00Z",
+    "lastLogin": "2024-02-29T17:00:00Z",
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "303 Cedar Dr",
+      "city": "South City",
+      "state": "GA",
+      "zipCode": "30303",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 7,
+    "username": "chrisgreen",
+    "email": "chris.green@example.com",
+    "firstName": "Chris",
+    "lastName": "Green",
+    "isActive": false,
+    "registrationDate": "2022-09-01T07:30:00Z",
+    "lastLogin": null,
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "404 Elm Pkwy",
+      "city": "North Town",
+      "state": "IL",
+      "zipCode": "60601",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 8,
+    "username": "oliviablack",
+    "email": "olivia.black@example.com",
+    "firstName": "Olivia",
+    "lastName": "Black",
+    "isActive": true,
+    "registrationDate": "2023-06-12T12:00:00Z",
+    "lastLogin": "2024-03-01T08:45:00Z",
+    "roles": [
+      "user",
+      "premium"
+    ],
+    "address": {
+      "street": "505 Poplar Ave",
+      "city": "Eastside",
+      "state": "PA",
+      "zipCode": "19101",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 9,
+    "username": "davidking",
+    "email": "david.king@example.com",
+    "firstName": "David",
+    "lastName": "King",
+    "isActive": true,
+    "registrationDate": "2024-02-01T10:30:00Z",
+    "lastLogin": "2024-03-02T12:00:00Z",
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "606 Willow Way",
+      "city": "Westend",
+      "state": "CO",
+      "zipCode": "80202",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 10,
+    "username": "sophielopez",
+    "email": "sophie.lopez@example.com",
+    "firstName": "Sophie",
+    "lastName": "Lopez",
+    "isActive": true,
+    "registrationDate": "2023-04-18T14:00:00Z",
+    "lastLogin": "2024-03-01T16:00:00Z",
+    "roles": [
+      "user",
+      "admin"
+    ],
+    "address": {
+      "street": "707 Canyon Rd",
+      "city": "Mountainview",
+      "state": "AZ",
+      "zipCode": "85001",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 11,
+    "username": "ethanjones",
+    "email": "ethan.jones@example.com",
+    "firstName": "Ethan",
+    "lastName": "Jones",
+    "isActive": false,
+    "registrationDate": "2022-10-20T09:00:00Z",
+    "lastLogin": "2023-01-01T10:00:00Z",
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "808 River St",
+      "city": "Riverside",
+      "state": "OR",
+      "zipCode": "97201",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 12,
+    "username": "miawilliams",
+    "email": "mia.williams@example.com",
+    "firstName": "Mia",
+    "lastName": "Williams",
+    "isActive": true,
+    "registrationDate": "2024-01-22T11:00:00Z",
+    "lastLogin": "2024-03-02T09:30:00Z",
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "909 Lakefront Dr",
+      "city": "Lakeside",
+      "state": "MI",
+      "zipCode": "48101",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 13,
+    "username": "liamthompson",
+    "email": "liam.thompson@example.com",
+    "firstName": "Liam",
+    "lastName": "Thompson",
+    "isActive": true,
+    "registrationDate": "2023-08-05T15:00:00Z",
+    "lastLogin": "2024-02-27T14:00:00Z",
+    "roles": [
+      "user",
+      "premium"
+    ],
+    "address": {
+      "street": "111 Ocean Blvd",
+      "city": "Coastal City",
+      "state": "CA",
+      "zipCode": "92054",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 14,
+    "username": "avalynn",
+    "email": "ava.lynn@example.com",
+    "firstName": "Ava",
+    "lastName": "Lynn",
+    "isActive": true,
+    "registrationDate": "2023-10-01T08:00:00Z",
+    "lastLogin": "2024-03-01T10:00:00Z",
+    "roles": [
+      "user"
+    ],
+    "address": {
+      "street": "222 Forest Way",
+      "city": "Woodland",
+      "state": "VA",
+      "zipCode": "20101",
+      "country": "USA"
+    }
+  },
+  {
+    "id": 15,
+    "username": "noahparker",
+    "email": "noah.parker@example.com",
+    "firstName": "Noah",
+    "lastName": "Parker",
+    "isActive": true,
+    "registrationDate": "2023-12-01T09:00:00Z",
+    "lastLogin": "2024-03-02T11:00:00Z",
+    "roles": [
+      "user",
+      "moderator"
+    ],
+    "address": {
+      "street": "333 Hilltop Cir",
+      "city": "Highlands",
+      "state": "NC",
+      "zipCode": "28741",
+      "country": "USA"
+    }
+  }
+]
